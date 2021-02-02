@@ -46,7 +46,7 @@ class Caster():
                 break
         while proc.isalive():
             con = str(proc.read())
-            if "rollback:" in con and "[?25h" in con: #looks for rollback set dialogue
+            if "rollback:" in con and "[?25h" in con: #looks for rollback set dialogue, [?25h seems to always be the last item in a complete caster output
                 n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0'] #find all numbers 1-15 for caster set suggestion
                 self.ds =  int(n[-5]) - int(n[-3])
                 self.rs =  int(n[-3])
