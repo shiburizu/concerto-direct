@@ -16,7 +16,7 @@ This program is only tested on Windows 10 for the time being. For best usage don
 
 Dependencies:
 * pywinpty
-* Kivy
+* Kivy[base]
 
 To build, point pyinstaller at concerto.spec. keep all files in this zip in the same directory at build time. winpty-agent.exe needs to be included in the onefile.
 
