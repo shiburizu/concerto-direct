@@ -1,0 +1,99 @@
+#:import webbrowser webbrowser
+
+<DirectScreen>:
+    name: 'Direct'
+    userIP: userIP
+    AnchorLayout:
+        anchor_x: 'center'
+        canvas.before:
+        GridLayout:
+            size_hint: (0.75,0.75)
+            cols: 1
+            row_force_default: True
+            row_default_height: 30
+            spacing: [0,10]
+            Label:
+                text: 'Concerto (prototyping)'
+            BoxLayout:
+                TextInput:
+                    multiline: False
+                    id: userIP
+                    size_hint: (.5,1)
+                Button:
+                    text: 'Join'
+                    on_release: root.join(userIP.text)
+                    size_hint: (.25,1)
+                Button:
+                    text: 'Watch'
+                    on_release: root.watch(userIP.text)
+                    size_hint: (.25,1)
+            Button:
+                text: 'Host Versus'
+                on_release: root.host()
+            Button:
+                text: 'Training Mode'
+                on_release: root.training()
+            Button:
+                text: 'Replay Theater'
+                on_release: root.replays()
+            Button:
+                text: 'Local VS'
+                on_release: root.local()
+            Button:
+                text: 'Tournament Local VS'
+                on_release: root.tournament()
+            Button:
+                text: 'Read the Wiki'
+                on_release: webbrowser.open('https://wiki.gbl.gg/w/Melty_Blood/MBAACC')
+
+<GameModal>
+    modalTxt: modalTxt
+    closeBtn: closeBtn
+    size_hint: None,None
+    size: 400,150
+    auto_dismiss: False   
+    BoxLayout:
+        padding: 20,20
+        orientation: 'vertical'
+        Label:
+            id: modalTxt
+        Button:
+            text: 'Close'
+            id: closeBtn
+
+<FrameModal>
+    frameTxt: frameTxt
+    r_input: r_input
+    d_input: d_input
+    startBtn: startBtn
+    closeBtn: closeBtn
+    size_hint: None,None
+    size: 400,200
+    auto_dismiss: False
+    GridLayout:
+        cols: 1
+        padding: 20,20
+        row_force_default: True
+        row_default_height: 30
+        spacing: [0,10]  
+        Label:
+            id: frameTxt
+        BoxLayout:
+            Label:
+                text: 'Rollback:'
+            TextInput
+                multiline: False
+                id: r_input
+                input_filter: 'int'
+            Label:
+                text: 'Delay:'
+            TextInput
+                multiline: False
+                id: d_input
+                input_filter: 'int'
+        Button:
+            text: 'Start'
+            id: startBtn
+        Button:
+            text: 'Close'
+            id: closeBtn
