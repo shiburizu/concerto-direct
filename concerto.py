@@ -46,7 +46,7 @@ class Caster():
                 break
         while proc.isalive():
             con = str(proc.read())
-            if "rollback:" in con and "[?25h" in con: #looks for rollback set dialogue, [?25h seems to always be the last item in a complete caster output
+            if "[?25l" in con and "rollback:" in con and "[?25h" in con: #looks for rollback set dialogue, [?25l is first and [?25h is last in complete caster output
                 n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0'] #find all numbers 1-15 for caster set suggestion
                 self.ds =  int(n[-5]) - int(n[-3])
                 self.rs =  int(n[-3])
@@ -76,13 +76,15 @@ class Caster():
                         proc.write('\x0D')
                         #self.playing = True #set netplaying to avoid caster being killed
                         break
+            else:
+                continue
 
     def join(self,ip,sc,*args):
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n %s' % ip)
         self.aproc = proc
         while proc.isalive():
             con = str(proc.read())
-            if "rollback:" in con and "[?25h" in con:
+            if "[?25l" in con and "rollback:" in con and "[?25h" in con:
                 n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0']
                 self.ds =  int(n[-5]) - int(n[-3])
                 self.rs =  int(n[-3])
@@ -111,27 +113,35 @@ class Caster():
                         proc.write('\x0D')
                         #self.playing = True
                         break
+            else:
+                continue
 
     def watch(self,ip,*args):
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n -s %s' % ip)
         self.aproc = proc
         while proc.isalive():
             con = str(proc.read())
-            if "fast-forward)" in con and "[?25h" in con: #in testing it seems the later caster output text gives better accuracy
+            if "[?25l" in con and "Spectating" in con and "vs" in con and "[?25h" in con: #in testing it seems the later caster output text gives better accuracy
+                proc.write('1') #start spectating, find names after
                 n = con.split()
-                i = 0
-                r = []
-                for x in n:
-                    if i < 13:
-                        i = i + 1
-                    else:
-                        if x == '\x1b[0K*':
-                            break
-                        else:
-                            r.append(x)
-                CApp.DirectScreen.activePop.modalTxt.text = ' '.join(r) #replace connecting text with match name in caster
-                proc.write('1')
+                #print(n)
+                CApp.DirectScreen.activePop.modalTxt.text = self.cleanstring(n)  #replace connecting text with match name in caster
                 break
+            else:
+                continue
+
+    def cleanstring(self,n): #expects list n
+        i = 0
+        r = []
+        for x in n:
+            if i < 13:
+                i = i + 1
+            else:
+                if x == '\x1b[0K*':
+                    break
+                else:
+                    r.append(x)
+        return ' '.join(r)
     
     def training(self):
         proc = PtyProcess.spawn('cccaster.v3.0.exe')
