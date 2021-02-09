@@ -4,62 +4,152 @@
     name: 'Direct'
     userIP: userIP
     AnchorLayout:
-        anchor_x: 'center'
-        canvas.before:
+        anchor_x: 'left'
+        anchor_y: 'top'
+        Image:
+            id: background
         GridLayout:
-            size_hint: (0.75,0.75)
+            size_hint: (1, 0.75)
             cols: 1
-            row_force_default: True
-            row_default_height: 30
             spacing: [0,10]
             Label:
-                text: 'Concerto (prototyping)'
-            BoxLayout:
+                text: 'Concerto'
+                font_size: 20
+                outline_width: 1
+            GridLayout:
+                rows: 1
                 TextInput:
                     multiline: False
                     id: userIP
-                    size_hint: (.5,1)
+                    padding_x: 50
+                    foreground_color: (255, 255, 255, 1)
+                    background_color: (255, 0, 0, 0.2)
                 Button:
-                    text: 'Join'
-                    on_release: root.join(userIP.text)
+                    text: 'JOIN'
+                    background_color: (0, 0, 0, 0)
+                    outline_width: 1
+                    on_press: self.background_color = (100, 0, 0, 0.9)
+                    on_release: 
+                        self.background_color = (0, 0, 0, 0)
+                        root.join(userIP.text)
                     size_hint: (.25,1)
                 Button:
-                    text: 'Watch'
-                    on_release: root.watch(userIP.text)
+                    text: 'WATCH'
+                    background_color: (0, 0, 0, 0)
+                    outline_width: 1
                     size_hint: (.25,1)
+                    on_press: self.background_color = (100, 0, 0, 0.9)
+                    on_release: 
+                        self.background_color = (0, 0, 0, 0)
+                        root.watch(userIP.text)
             Button:
-                text: 'Host Versus'
-                on_release: root.host()
+                text: 'HOST VERSUS'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding_x: 50
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    self.background_color = (0, 0, 0, 0)
+                    root.host()
             Button:
-                text: 'Training Mode'
-                on_release: root.training()
+                text: 'TRAINING'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding_x: 50
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    self.background_color = (0, 0, 0, 0)
+                    root.training()
             Button:
-                text: 'Replay Theater'
-                on_release: root.replays()
+                text: 'REPLAY THEATER'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding_x: 50
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    self.background_color = (0, 0, 0, 0)
+                    root.replays()
             Button:
-                text: 'Local VS'
-                on_release: root.local()
+                text: 'LOCAL VERSUS'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding_x: 50
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    self.background_color = (0, 0, 0, 0)
+                    root.local()
             Button:
-                text: 'Tournament Local VS'
-                on_release: root.tournament()
-            Button:
-                text: 'Read the Wiki'
-                on_release: webbrowser.open('https://wiki.gbl.gg/w/Melty_Blood/MBAACC')
-
+                text: 'TOURNAMENT LOCAL VERSUS'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding_x: 50
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    self.background_color = (0, 0, 0, 0)
+                    root.tournament()
+    GridLayout:
+        rows: 1
+        padding: 20,20
+        row_force_default: True
+        row_default_height: 30
+        spacing: [0,10] 
+        pos_hint: {'center_x': 0.5, 'top': .15}
+        size_hint: (0.4,1)
+        Button:
+            text: 'DISCORD'
+            background_color: (0, 0, 0, 0)
+            outline_width: 1
+            on_press: self.background_color = (100, 0, 0, 0.9)
+            on_release: 
+                self.background_color = (0, 0, 0, 0)
+                webbrowser.open('https://discordapp.com/invite/33cskPv')
+        Button:
+            text: 'WIKI'
+            background_color: (0, 0, 0, 0)
+            outline_width: 1
+            on_press: self.background_color = (100, 0, 0, 0.9)
+            on_release: 
+                self.background_color = (0, 0, 0, 0)
+                webbrowser.open('https://wiki.gbl.gg/w/Melty_Blood/MBAACC')
+        
 <GameModal>
     modalTxt: modalTxt
     closeBtn: closeBtn
     size_hint: None,None
     size: 400,150
-    auto_dismiss: False   
+    auto_dismiss: False 
+    background_color: '#343B88'
     BoxLayout:
         padding: 20,20
         orientation: 'vertical'
         Label:
             id: modalTxt
+            background_color: (0, 0, 0, 0)
+            outline_width: 1
         Button:
-            text: 'Close'
             id: closeBtn
+            background_color: (255, 0, 0, 0.2)
+            outline_width: 1
+            on_press: self.background_color = (100, 0, 0, 0.9)
+            on_release: 
+                background_color: (255, 0, 0, 0.2)
+            size_hint: (0.5,0.45)
+            pos_hint: {'center_x': 0.5}
 
 <FrameModal>
     frameTxt: frameTxt
@@ -68,32 +158,54 @@
     startBtn: startBtn
     closeBtn: closeBtn
     size_hint: None,None
-    size: 400,200
+    size: 400,150
     auto_dismiss: False
+    background_color: '#343B88'
     GridLayout:
         cols: 1
         padding: 20,20
         row_force_default: True
-        row_default_height: 30
+        row_default_height: 32
         spacing: [0,10]  
         Label:
             id: frameTxt
+            background_color: (0, 0, 0, 0)
+            outline_width: 1
         BoxLayout:
             Label:
                 text: 'Rollback:'
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
             TextInput
                 multiline: False
                 id: r_input
                 input_filter: 'int'
+                foreground_color: (255, 255, 255, 1)
+                background_color: (255, 0, 0, 0.2)
             Label:
                 text: 'Delay:'
+                background_color: (0, 0, 0, 0)
+                outline_width: 1
             TextInput
                 multiline: False
                 id: d_input
                 input_filter: 'int'
-        Button:
-            text: 'Start'
-            id: startBtn
-        Button:
-            text: 'Close'
-            id: closeBtn
+                foreground_color: (255, 255, 255, 1)
+                background_color: (255, 0, 0, 0.2)
+        BoxLayout:
+            Button:
+                text: 'Start'
+                id: startBtn
+                background_color: (255, 0, 0, 0.2)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                background_color: (255, 0, 0, 0.2)
+            Button:
+                text: 'Close'
+                id: closeBtn
+                background_color: (255, 0, 0, 0.2)
+                outline_width: 1
+                on_press: self.background_color = (100, 0, 0, 0.9)
+                on_release: 
+                    background_color: (255, 0, 0, 0.2)
