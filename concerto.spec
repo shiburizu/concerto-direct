@@ -4,9 +4,8 @@ block_cipher = None
 
 
 a = Analysis(['concerto.py'],
-             pathex=['D:\\backup\\MBAACC - Community Edition\\MBAACC'],
              binaries=[('winpty-agent.exe','.')],
-             datas=[('Concerto.kv','.')],
+             datas=[('Concerto.kv','.'), ('texgyreheros-bolditalic.otf','.'), ('bg.png','.')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
