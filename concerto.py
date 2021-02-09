@@ -2,12 +2,29 @@
 from winpty import PtyProcess #pywinpty
 import os, sys, time, re, threading, logging
 from functools import partial
+
+# Pyinstaller path helper
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 #Kivy core
 import kivy
 from kivy.config import Config
 Config.set('graphics', 'width', '600')
 Config.set('graphics', 'height', '400')
 Config.set('graphics', 'resizable', False)
+Config.set(
+    "kivy",
+    "default_font",
+    [
+        "Tex Gyre",
+        resource_path("texgyreheros-bolditalic.otf"),
+    ],
+)
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.resources import resource_add_path, resource_find
@@ -77,6 +94,7 @@ class Caster():
                         #self.playing = True #set netplaying to avoid caster being killed
                         break
             else:
+                time.sleep(1)
                 continue
 
     def join(self,ip,sc,*args):
@@ -114,6 +132,7 @@ class Caster():
                         #self.playing = True
                         break
             else:
+                time.sleep(1)
                 continue
 
     def watch(self,ip,*args):
@@ -296,6 +315,8 @@ class DirectScreen(Screen):
         os.system('start /min taskkill /f /im cccaster.v3.0.exe')
         del(t)
         p.dismiss()
+        self.activePop.dismiss()
+        self.activePop = None
         CApp.game.aproc = None
         CApp.game.playing = False
 
@@ -308,6 +329,7 @@ class Concerto(App):
     def build(self):
         self.DirectScreen = DirectScreen()
         self.sm.add_widget(self.DirectScreen)
+        self.DirectScreen.ids.background.source = resource_path("bg.png")
         return self.sm
 
     def checkPop(self,*args):
@@ -330,9 +352,7 @@ class Concerto(App):
 CApp = Concerto(Caster())
 
 if __name__ == '__main__':
-    if hasattr(sys, '_MEIPASS'): #necessary for pyinstaller to work
-        resource_add_path(os.path.join(sys._MEIPASS))
-    Builder.load_file("Concerto.kv") #concerto.kv defines UI
+    Builder.load_file(resource_path("Concerto.kv")) #concerto.kv defines UI
     netwatch = threading.Thread(target=CApp.checkPop,daemon=True) #netplay watchdog
     netwatch.start()
     CApp.run()
