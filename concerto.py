@@ -25,6 +25,8 @@ Config.set(
         resource_path("texgyreheros-bolditalic.otf"),
     ],
 )
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+Config.set('kivy','window_icon','concertoicon.ico')
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.resources import resource_add_path, resource_find
@@ -52,18 +54,33 @@ class Caster():
     p2 = None #TODO p2 side name
     aproc = None #active caster
 
+    def isValidRead(self,con): #looks for rollback set dialogue, [?25l is first and [?25h is last in complete caster output
+        print("==============")
+        print(con.split())
+        if "[?25l" in con:
+            if "[?25h" in con:
+                if re.findall('\[[1-9]A',con) != []:
+                    if "rollback:" in con:
+                        n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0']
+                        if len(n) >= 5:
+                            if re.findall('\d+\.\d+',con) != []:
+                                print("GOOD READ")
+                                return True
+        print("BAD READ")
+        return False
+
     #TODO for some reason it doesnt always return complete caster output.
     def host(self,sc): #sc is active screen to trigger frame delay select
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n 0')
         self.aproc = proc
         while proc.isalive():
-            ip = re.findall(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{,5}',proc.readline()) #find IP and port combo for host
+            ip = re.findall(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{,5}',proc.read()) #find IP and port combo for host
             if ip != []:
                 self.adr = str(ip[0])
                 break
         while proc.isalive():
             con = str(proc.read())
-            if "[?25l" in con and "rollback:" in con and "[?25h" in con: #looks for rollback set dialogue, [?25l is first and [?25h is last in complete caster output
+            if self.isValidRead(con):
                 n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0'] #find all numbers 1-15 for caster set suggestion
                 self.ds =  int(n[-5]) - int(n[-3])
                 self.rs =  int(n[-3])
@@ -81,7 +98,7 @@ class Caster():
                 p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
                 sc.frameset(' '.join(r),p[-1])
                 while True:
-                    if self.rf != -1 & self.df != -1:
+                    if self.rf != -1 and self.df != -1:
                         proc.write('\x08') #two backspace keys for edge case of >9 frames
                         proc.write('\x08')
                         proc.write(str(self.rf))
@@ -94,7 +111,6 @@ class Caster():
                         #self.playing = True #set netplaying to avoid caster being killed
                         break
             else:
-                time.sleep(1)
                 continue
 
     def join(self,ip,sc,*args):
@@ -102,7 +118,7 @@ class Caster():
         self.aproc = proc
         while proc.isalive():
             con = str(proc.read())
-            if "[?25l" in con and "rollback:" in con and "[?25h" in con:
+            if self.isValidRead(con):
                 n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0']
                 self.ds =  int(n[-5]) - int(n[-3])
                 self.rs =  int(n[-3])
@@ -119,7 +135,7 @@ class Caster():
                 p = re.findall('\d+\.\d+',con)
                 sc.frameset(' '.join(r),p[-1])
                 while True:
-                    if self.rf != -1 & self.df != -1:
+                    if self.rf != -1 and self.df != -1:
                         proc.write('\x08')
                         proc.write('\x08')
                         proc.write(str(self.rf))
@@ -132,7 +148,6 @@ class Caster():
                         #self.playing = True
                         break
             else:
-                time.sleep(1)
                 continue
 
     def watch(self,ip,*args):

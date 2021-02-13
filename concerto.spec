@@ -5,7 +5,7 @@ block_cipher = None
 
 a = Analysis(['concerto.py'],
              binaries=[('winpty-agent.exe','.')],
-             datas=[('Concerto.kv','.'), ('texgyreheros-bolditalic.otf','.'), ('bg.png','.')],
+             datas=[('Concerto.kv','.'), ('texgyreheros-bolditalic.otf','.'), ('bg.png','.'), ('concertoicon.ico','.')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -22,11 +22,12 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           *[Tree(p) for p in (sdl2.dep_bins + glew.dep_bins)],
-          name='concerto',
+          name='Concerto',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False )
+          console=False,
+          icon='concertoicon.ico')
