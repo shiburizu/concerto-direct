@@ -10,22 +10,18 @@ This program is only tested on Windows 10 for the time being. For best usage don
 
 ## Build information
 
-**Concerto currently only works with Python 3.6. This is because of pywinpty.**
-
-* Latest prebuilt version here: https://www.python.org/downloads/release/python-368/
-
 Dependencies:
 * pywinpty
 * Kivy[base]
 
-To build, point pyinstaller at concerto.spec. keep all files in this zip in the same directory at build time. winpty-agent.exe needs to be included in the onefile.
+To build, point pyinstaller at concerto.spec. keep all files in this zip in the same directory at build time.
 
-* winpty-agent.exe which comes from Spyder-IDE and is licensed under MIT. 
-* Python 3.9 support is being investigated for pywinpty, see here: https://github.com/jupyter/notebook/issues/5967
+Build command used: pyinstaller concerto.spec -F -i concertoicon.ico --upx-dir upx -w   
 
 ## Caveats
 
-* Reading the caster output is not always perfect so names may be incorrectly displayed
+* Expect bugs
 * REALLY long names totally break this I suspect
 * Cannot change your name in the UI
+* Cannot set port in UI
 * Several advanced features are not available yet from the UI
