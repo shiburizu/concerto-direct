@@ -2,7 +2,8 @@
 from winpty import PtyProcess #pywinpty
 import os, sys, time, re, threading, logging
 from functools import partial
-
+from datetime import datetime
+logging.basicConfig(filename='concerto.log', encoding='utf-8', level=logging.DEBUG)
 # Pyinstaller path helper
 def resource_path(relative_path):
     try:
@@ -10,7 +11,6 @@ def resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
-
 #Kivy core
 import kivy
 from kivy.config import Config
@@ -42,6 +42,18 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.modalview import ModalView
 from kivy.clock import Clock
+#clean caster output of ANSI escape codes
+ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]')
+
+class loghelper():
+    dateTimeObj = datetime.now()
+    timestampStr = 'Concerto_' + dateTimeObj.strftime("%d-%b-%Y-%H-%M-%S") + '.txt'
+
+    def write(self,s):
+        with open(self.timestampStr,'a') as log:
+                log.write(s)
+
+logger = loghelper()
 
 class Caster():
     adr = None #current game IP
@@ -54,129 +66,160 @@ class Caster():
     p2 = None #TODO p2 side name
     aproc = None #active caster
 
-    def isValidRead(self,con): #looks for rollback set dialogue, [?25l is first and [?25h is last in complete caster output
-        print("==============")
-        print(con.split())
-        if "[?25l" in con:
-            if "[?25h" in con:
-                if re.findall('\[[1-9]A',con) != []:
-                    if "rollback:" in con:
-                        n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0']
-                        if len(n) >= 5:
-                            if re.findall('\d+\.\d+',con) != []:
-                                print("GOOD READ")
-                                return True
-        print("BAD READ")
+    #n = [i for i in re.findall('[0-9]+',' '.join(scon)) if int(i) < 15]
+    def isValidRead(self,scon): 
+        if "rollback:" in scon:
+            sconlst = scon.split()
+            rbn = 0
+            for r in reversed(sconlst):
+                if r != 'rollback:':
+                    rbn += 1
+                elif r == 'rollback:':
+                    break
+            if rbn > 0:
+                rblst = sconlst[-rbn:]
+                for i in rblst:
+                    if i.replace('*','') == '':
+                        rblst.remove(i)
+                if len(rblst) > 0: #only checking if a number exists, not using rblst anywhere
+                    p = re.findall('\d+\.\d+',scon)
+                    for m in p:
+                        if m in sconlst:
+                            sconlst.remove(m)
+                    n = [i for i in re.findall('[0-9]+',' '.join(sconlst)) if int(i) < 15]
+                    if len(n) >= 2:
+                        logger.write('\nrblst: %s\n' % rblst)
+                        logger.write('\nn: %s\n' % n)
+                        logger.write('\nVALID READ:\n%s\n' % scon.split())
+                        return n
         return False
 
-    #TODO for some reason it doesnt always return complete caster output.
     def host(self,sc): #sc is active screen to trigger frame delay select
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n 0')
         self.aproc = proc
+        logger.write('\n== Host ==\n')
         while proc.isalive():
             ip = re.findall(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{,5}',proc.read()) #find IP and port combo for host
             if ip != []:
                 self.adr = str(ip[0])
                 break
+        logger.write('IP: %s\n' % self.adr)
+        curCon = ""
+        lastCon = ""
+        con = ""
         while proc.isalive():
-            con = str(proc.read())
-            if self.isValidRead(con):
-                n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0'] #find all numbers 1-15 for caster set suggestion
-                self.ds =  int(n[-5]) - int(n[-3])
-                self.rs =  int(n[-3])
-                r = []
-                namecheck = False #try to read names from caster output
-                for x in con.split():
-                    if x == '\x1b[0m*' and namecheck == False:
-                        namecheck = True
-                    if x != '\x1b[0m*' and namecheck == True:  
-                        if x == '\x1b[0K*':
-                            r.pop()
+            curCon = ansi_escape.sub('',str(proc.read()))
+            con += lastCon + curCon
+            if self.playing == False and self.rs == -1 and self.ds == -1:
+                n = self.isValidRead(con)
+                if n != False:
+                    logger.write('\n=================================\n')
+                    logger.write(str(con.split()))
+                    self.ds =  int(n[-2]) - int(n[-1])
+                    self.rs =  int(n[-1])
+                    r = []
+                    namecheck = False #try to read names from caster output
+                    for x in reversed(con.split()):
+                        if namecheck == False and x == "connected":
+                            namecheck = True
+                        elif namecheck == True and x == '*':
                             break
-                        else:
-                            r.append(x)
-                p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
-                sc.frameset(' '.join(r),p[-1])
-                while True:
-                    if self.rf != -1 and self.df != -1:
-                        proc.write('\x08') #two backspace keys for edge case of >9 frames
-                        proc.write('\x08')
-                        proc.write(str(self.rf))
-                        proc.write('\x0D')
-                        time.sleep(0.5) #slight delay to let caster refresh screen
-                        proc.write('\x08')
-                        proc.write('\x08')
-                        proc.write(str(self.df))
-                        proc.write('\x0D')
-                        #self.playing = True #set netplaying to avoid caster being killed
-                        break
-            else:
-                continue
+                        elif namecheck == True and x.replace('*','') != '':
+                            r.insert(0,x)
+                    p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
+                    sc.frameset(' '.join(r),p[-1])
+                    while True:
+                        if self.rf != -1 and self.df != -1:
+                            proc.write('\x08') #two backspace keys for edge case of >9 frames
+                            proc.write('\x08')
+                            proc.write(str(self.rf))
+                            proc.write('\x0D')
+                            time.sleep(0.1) #slight delay to let caster refresh screen
+                            proc.write('\x08')
+                            proc.write('\x08')
+                            proc.write(str(self.df))
+                            proc.write('\x0D')
+                            self.playing = True #set netplaying to avoid more reads
+                            break
+                else:
+                    if lastCon != curCon:
+                        lastCon = curCon
+                    continue
 
     def join(self,ip,sc,*args):
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n %s' % ip)
         self.aproc = proc
+        curCon = ""
+        lastCon = ""
+        con = ""
+        logger.write('\n== Join %s ==\n' % ip)
         while proc.isalive():
-            con = str(proc.read())
-            if self.isValidRead(con):
-                n = [i for i in re.findall('[0-9]+', con) if int(i) < 15 and str(i) != '0']
-                self.ds =  int(n[-5]) - int(n[-3])
-                self.rs =  int(n[-3])
-                r = []
-                namecheck = False
-                for x in con.split():
-                    if x == 'to' and namecheck == False:
-                        namecheck = True
-                    if x != 'to' and namecheck == True:  
-                        if x == '\x1b[0K*':
+            curCon = ansi_escape.sub('',str(proc.read()))
+            con += lastCon + curCon
+            if self.playing == False and self.rs == -1 and self.ds == -1:
+                n = self.isValidRead(con)
+                if n != False:
+                    logger.write('\n=================================\n')
+                    logger.write(str(con.split()))
+                    self.ds = int(n[-2]) - int(n[-1])
+                    self.rs = int(n[-1])
+                    r = []
+                    namecheck = False #try to read names from caster output
+                    for x in con.split():
+                        if x == "to" and namecheck == False:
+                            namecheck = True
+                        elif x == '*' and namecheck == True:
                             break
-                        else:
+                        elif namecheck == True and x.replace('*','') != '':
                             r.append(x)
-                p = re.findall('\d+\.\d+',con)
-                sc.frameset(' '.join(r),p[-1])
-                while True:
-                    if self.rf != -1 and self.df != -1:
-                        proc.write('\x08')
-                        proc.write('\x08')
-                        proc.write(str(self.rf))
-                        proc.write('\x0D')
-                        time.sleep(0.5)
-                        proc.write('\x08')
-                        proc.write('\x08')
-                        proc.write(str(self.df))
-                        proc.write('\x0D')
-                        #self.playing = True
-                        break
+                    p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
+                    sc.frameset(' '.join(r),p[-1])
+                    while True:
+                        if self.rf != -1 and self.df != -1:
+                            proc.write('\x08')
+                            proc.write('\x08')
+                            proc.write(str(self.rf))
+                            proc.write('\x0D')
+                            time.sleep(0.1)
+                            proc.write('\x08')
+                            proc.write('\x08')
+                            proc.write(str(self.df))
+                            proc.write('\x0D')
+                            self.playing = True
+                            break
             else:
+                if lastCon != curCon:
+                    lastCon = curCon
                 continue
 
     def watch(self,ip,*args):
         proc = PtyProcess.spawn('cccaster.v3.0.exe -n -s %s' % ip)
         self.aproc = proc
+        curCon = ""
+        lastCon = ""
+        con = ""
+        logger.write('\n== Watch %s ==\n' % ip)
         while proc.isalive():
-            con = str(proc.read())
-            if "[?25l" in con and "Spectating" in con and "vs" in con and "[?25h" in con: #in testing it seems the later caster output text gives better accuracy
+            curCon = ansi_escape.sub('',str(proc.read()))
+            con += lastCon + curCon
+            if "fast-forward)" in con:
+                logger.write('\n=================================\n')
+                logger.write(str(con.split()))
                 proc.write('1') #start spectating, find names after
-                n = con.split()
-                #print(n)
-                CApp.DirectScreen.activePop.modalTxt.text = self.cleanstring(n)  #replace connecting text with match name in caster
+                r = []
+                for x in reversed(con.split()):
+                    if x == '*' and len(r) > 0:
+                        if r[0] == "Spectating":
+                            break
+                    elif x != '*' and x.replace('*','') != '':
+                        r.insert(0,x)
+                CApp.DirectScreen.activePop.modalTxt.text = ' '.join(r)  #replace connecting text with match name in caster
                 break
             else:
+                if lastCon != curCon:
+                    lastCon = curCon
                 continue
 
-    def cleanstring(self,n): #expects list n
-        i = 0
-        r = []
-        for x in n:
-            if i < 13:
-                i = i + 1
-            else:
-                if x == '\x1b[0K*':
-                    break
-                else:
-                    r.append(x)
-        return ' '.join(r)
-    
     def training(self):
         proc = PtyProcess.spawn('cccaster.v3.0.exe')
         self.aproc = proc
@@ -210,7 +253,6 @@ class Caster():
     def replays(self):
         proc = PtyProcess.spawn('cccaster.v3.0.exe')
         self.aproc = proc
-        self.playing = True
         while proc.isalive():
             if "Offline" in proc.read():
                 proc.write('4')
@@ -261,13 +303,14 @@ class DirectScreen(Screen):
         fpopup.frameTxt.text = 'Connected to: %s\nPing: %s, Suggested: Rollback %s,  Delay %s' % (name, ping, CApp.game.rs, CApp.game.ds)
         fpopup.r_input.text = str(CApp.game.rs)
         fpopup.d_input.text = str(CApp.game.ds)
-        fpopup.startBtn.bind(on_release=partial(self.confirm,p=fpopup,r=fpopup.r_input,d=fpopup.d_input))
+        fpopup.startBtn.bind(on_release=partial(self.confirm,p=fpopup,r=fpopup.r_input,d=fpopup.d_input,n=name))
         fpopup.closeBtn.bind(on_release=partial(self.dismiss,t=CApp.game.aproc,p=fpopup))
         fpopup.open()
     
-    def confirm(self,obj,r,d,p,*args):
+    def confirm(self,obj,r,d,p,n,*args):
         CApp.game.rf = int(r.text)
         CApp.game.df = int(d.text)
+        CApp.DirectScreen.activePop.modalTxt.text += "\nConnected to: %s" % n
         p.dismiss()
 
     def training(self, *args):
@@ -330,7 +373,8 @@ class DirectScreen(Screen):
         os.system('start /min taskkill /f /im cccaster.v3.0.exe')
         del(t)
         p.dismiss()
-        self.activePop.dismiss()
+        if self.activePop != None:
+            self.activePop.dismiss()
         self.activePop = None
         CApp.game.aproc = None
         CApp.game.playing = False
@@ -355,14 +399,15 @@ class Concerto(App):
                 else:
                     self.DirectScreen.activePop.dismiss()
                     self.DirectScreen.activePop = None
+                    CApp.game.aproc = None
+                    CApp.game.playing = False
                     CApp.game.adr = None
                     CApp.game.rs = -1
                     CApp.game.ds = -1
                     CApp.game.rf = -1
                     CApp.game.df = -1
                     os.system('start /min taskkill /f /im cccaster.v3.0.exe')
-                    CApp.game.aproc = None
-            time.sleep(1) #checks for netplaying every 1 second by polling isalive() from game.aproc
+            time.sleep(0.5) #checks for netplaying every 1 second by polling isalive() from game.aproc
    
 CApp = Concerto(Caster())
 
