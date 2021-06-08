@@ -77,10 +77,7 @@ class Caster():
                 elif r == 'rollback:':
                     break
             if rbn > 0:
-                rblst = sconlst[-rbn:]
-                for i in rblst:
-                    if i.replace('*','') == '':
-                        rblst.remove(i)
+                rblst = re.sub("[^0-9]", "",''.join(sconlst[-rbn:]))
                 if len(rblst) > 0: #only checking if a number exists, not using rblst anywhere
                     p = re.findall('\d+\.\d+',scon)
                     for m in p:
