@@ -124,8 +124,8 @@ class Caster():
                         elif namecheck == True and x.replace('*','') != '':
                             r.insert(0,x)
                     p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
-                    sc.frameset(' '.join(r),p[-1])
-                    while True:
+                    sc.frameset(' '.join(r),n[-2],p[-1])
+                    while True: #todo optimize frameset stutter by making this a thread
                         if self.rf != -1 and self.df != -1:
                             proc.write('\x08') #two backspace keys for edge case of >9 frames
                             proc.write('\x08')
@@ -170,7 +170,7 @@ class Caster():
                         elif namecheck == True and x.replace('*','') != '':
                             r.append(x)
                     p = re.findall('\d+\.\d+',con) #find all floats in caster output and use the last one [-1] to make sure we get caster text
-                    sc.frameset(' '.join(r),p[-1])
+                    sc.frameset(' '.join(r),n[-2],p[-1])
                     while True:
                         if self.rf != -1 and self.df != -1:
                             proc.write('\x08')
@@ -295,9 +295,9 @@ class DirectScreen(Screen):
         self.activePop = popup
         popup.open()
     
-    def frameset(self,name,ping):
+    def frameset(self,name,delay,ping):
         fpopup = FrameModal()
-        fpopup.frameTxt.text = 'Connected to: %s\nPing: %s, Suggested: Rollback %s,  Delay %s' % (name, ping, CApp.game.rs, CApp.game.ds)
+        fpopup.frameTxt.text = 'Connected to: %s\nPing: %s Network Delay: %s, Suggested: Rollback %s,  Delay %s' % (name, ping, delay, CApp.game.rs, CApp.game.ds)
         fpopup.r_input.text = str(CApp.game.rs)
         fpopup.d_input.text = str(CApp.game.ds)
         fpopup.startBtn.bind(on_release=partial(self.confirm,p=fpopup,r=fpopup.r_input,d=fpopup.d_input,n=name))
